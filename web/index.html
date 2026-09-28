@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>VisionOCR</title>
+
+
+    <style>
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            text-align: center;
+
+            background: #111;
+
+            color: white;
+
+            margin: 0;
+
+            padding: 30px;
+
+        }
+
+
+        h1 {
+
+            margin-bottom: 5px;
+
+        }
+
+
+        p {
+
+            color: #aaa;
+
+        }
+
+
+        .camera-container {
+
+            margin: 30px auto;
+
+            max-width: 900px;
+
+        }
+
+
+        video {
+
+            width: 100%;
+
+            max-width: 900px;
+
+            border-radius: 12px;
+
+            background: black;
+
+        }
+
+
+        button {
+
+            padding: 12px 20px;
+
+            margin: 8px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 16px;
+
+        }
+
+
+        #startCamera {
+
+            background: #00c853;
+
+            color: white;
+
+        }
+
+
+        #capture {
+
+            background: #2979ff;
+
+            color: white;
+
+        }
+
+
+        button:hover {
+
+            opacity: 0.85;
+
+        }
+
+
+        #result {
+
+            margin-top: 20px;
+
+            color: #00e5ff;
+
+            font-size: 18px;
+
+        }
+
+
+        canvas {
+
+            display: none;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <h1>
+        VisionOCR
+    </h1>
+
+
+    <p>
+        Computer Vision Based Text Recognition
+    </p>
+
+
+    <div class="camera-container">
+
+        <video
+            id="camera"
+            autoplay
+            playsinline
+        ></video>
+
+    </div>
+
+
+    <button id="startCamera">
+        Start Camera
+    </button>
+
+
+    <button id="capture">
+        Capture & Process
+    </button>
+
+
+    <canvas id="canvas"></canvas>
+
+
+    <p id="result">
+        Camera not started.
+    </p>
+
+
+    <script>
+
+
+        const video =
+            document.getElementById("camera");
+
+
+        const startButton =
+            document.getElementById("startCamera");
+
+
+        const captureButton =
+            document.getElementById("capture");
+
+
+        const canvas =
+            document.getElementById("canvas");
+
+
+        const result =
+            document.getElementById("result");
+
+
+        // =================================
+        // START CAMERA
+        // =================================
+
+        startButton.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    const stream =
+                        await navigator.mediaDevices
+                        .getUserMedia({
+                            video: true
+                        });
+
+
+                    video.srcObject =
+                        stream;
+
+
+                    result.textContent =
+                        "Camera started successfully.";
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Camera error:",
+                        error
+                    );
+
+
+                    result.textContent =
+                        "Could not access camera.";
+
+                }
+
+            }
+        );
+
+
+        // =================================
+        // CAPTURE + SEND IMAGE
+        // =================================
+
+        captureButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!video.srcObject) {
+
+                    result.textContent =
+                        "Start the camera first.";
+
+                    return;
+
+                }
+
+
+                // Set canvas size
+
+                canvas.width =
+                    video.videoWidth;
+
+                canvas.height =
+                    video.videoHeight;
+
+
+                // Get drawing context
+
+                const context =
+                    canvas.getContext("2d");
+
+
+                // Copy camera frame
+
+                context.drawImage(
+                    video,
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+
+                result.textContent =
+                    "Processing image...";
+
+
+                // Convert canvas to image
+
+                canvas.toBlob(
+                    async (blob) => {
+
+                        if (!blob) {
+
+                            result.textContent =
+                                "Could not create image.";
+
+                            return;
+
+                        }
+
+
+                        // Create form data
+
+                        const formData =
+                            new FormData();
+
+
+                        formData.append(
+                            "file",
+                            blob,
+                            "camera-frame.jpg"
+                        );
+
+
+                        try {
+
+                            // Send to FastAPI
+
+                            const response =
+                                await fetch(
+                                    "/api/process-image",
+                                    {
+                                        method: "POST",
+                                        body: formData
+                                    }
+                                );
+
+
+                            const data =
+                                await response.json();
+
+
+                            console.log(
+                                "Backend response:",
+                                data
+                            );
+
+
+                            if (data.success) {
+
+                                result.textContent =
+                                    `Image received by Python: ${data.width} × ${data.height}`;
+
+                            }
+
+                            else {
+
+                                result.textContent =
+                                    data.message;
+
+                            }
+
+                        }
+
+                        catch (error) {
+
+                            console.error(
+                                "Upload error:",
+                                error
+                            );
+
+
+                            result.textContent =
+                                "Could not connect to Python backend.";
+
+                        }
+
+                    },
+
+                    "image/jpeg",
+
+                    0.9
+
+                );
+
+            }
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>
