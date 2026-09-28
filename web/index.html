@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -12,227 +11,411 @@
 
     <title>VisionOCR</title>
 
-
     <style>
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-
-            font-family: Arial, sans-serif;
-
-            text-align: center;
+            margin: 0;
+            min-height: 100vh;
 
             background: #111;
-
             color: white;
 
-            margin: 0;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
 
-            padding: 30px;
-
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
 
         h1 {
+            margin-top: 30px;
+            margin-bottom: 20px;
 
-            margin-bottom: 5px;
-
+            color: #00e5ff;
         }
-
-
-        p {
-
-            color: #aaa;
-
-        }
-
 
         .camera-container {
+            width: min(900px, 90vw);
 
-            margin: 30px auto;
-
-            max-width: 900px;
-
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-
-        video {
+        .video-wrapper {
+            position: relative;
 
             width: 100%;
-
             max-width: 900px;
+        }
 
-            border-radius: 12px;
+        video {
+            width: 100%;
+
+            display: block;
+
+            border-radius: 14px;
 
             background: black;
 
+            border: 2px solid #333;
         }
 
+        .character-box {
+            position: absolute;
+
+            width: 300px;
+            height: 300px;
+
+            left: 50%;
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+            border: 3px solid #00ff88;
+
+            border-radius: 10px;
+
+            pointer-events: none;
+
+            box-shadow:
+                0 0 10px rgba(0, 255, 136, 0.4);
+        }
+
+        .box-label {
+            position: absolute;
+
+            top: -32px;
+            left: 0;
+
+            padding: 5px 10px;
+
+            background: #00ff88;
+            color: #111;
+
+            border-radius: 5px;
+
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .buttons {
+            margin-top: 20px;
+
+            display: flex;
+            gap: 20px;
+
+            flex-wrap: wrap;
+
+            justify-content: center;
+        }
 
         button {
-
-            padding: 12px 20px;
-
-            margin: 8px;
-
             border: none;
+
+            padding: 14px 25px;
 
             border-radius: 8px;
 
-            cursor: pointer;
-
             font-size: 16px;
 
-        }
+            cursor: pointer;
 
+            color: white;
+        }
 
         #startCamera {
-
             background: #00c853;
-
-            color: white;
-
         }
 
-
-        #capture {
-
+        #captureButton {
             background: #2979ff;
-
-            color: white;
-
         }
-
 
         button:hover {
-
             opacity: 0.85;
-
         }
 
-
-        #result {
-
-            margin-top: 20px;
-
-            color: #00e5ff;
+        .status {
+            margin-top: 25px;
 
             font-size: 18px;
 
+            color: #00e5ff;
+
+            text-align: center;
         }
 
+        .error {
+            color: #ff5252;
+        }
 
-        canvas {
+        .result {
+            margin-top: 25px;
 
-            display: none;
+            width: min(600px, 90vw);
 
+            padding: 25px;
+
+            border-radius: 15px;
+
+            background: #1c1c1c;
+
+            border: 1px solid #333;
+
+            text-align: center;
+        }
+
+        .result-title {
+            color: #aaa;
+
+            font-size: 16px;
+
+            margin-bottom: 10px;
+        }
+
+        .prediction {
+            font-size: 80px;
+
+            font-weight: bold;
+
+            color: #00e5ff;
+
+            line-height: 1;
+        }
+
+        .confidence {
+            margin-top: 15px;
+
+            font-size: 22px;
+
+            color: #00ff88;
+        }
+
+        .processed-title {
+            margin-top: 30px;
+
+            color: #aaa;
+
+            font-size: 16px;
+        }
+
+        #processedImage {
+            width: 280px;
+            height: 280px;
+
+            margin-top: 15px;
+
+            image-rendering: pixelated;
+
+            border: 3px solid #00e5ff;
+
+            background: black;
+        }
+
+        .instructions {
+            margin-top: 25px;
+
+            color: #aaa;
+
+            text-align: center;
+
+            line-height: 1.6;
+
+            margin-bottom: 40px;
         }
 
     </style>
-
 </head>
 
 
 <body>
 
-
     <h1>
-        VisionOCR
+        Handwritten Character Recognition
     </h1>
-
-
-    <p>
-        Computer Vision Based Text Recognition
-    </p>
 
 
     <div class="camera-container">
 
-        <video
-            id="camera"
-            autoplay
-            playsinline
-        ></video>
+        <div class="video-wrapper">
+
+            <video
+                id="video"
+                autoplay
+                playsinline
+            ></video>
+
+            <div class="character-box">
+
+                <div class="box-label">
+                    PLACE CHARACTER HERE
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <canvas id="canvas"></canvas>
+
+
+        <div class="buttons">
+
+            <button id="startCamera">
+                Start Camera
+            </button>
+
+            <button id="captureButton">
+                Capture & Process
+            </button>
+
+        </div>
+
+
+        <div
+            id="status"
+            class="status"
+        >
+            Camera not started.
+        </div>
+
+
+        <div class="result">
+
+            <div class="result-title">
+                AI Prediction
+            </div>
+
+
+            <div
+                id="prediction"
+                class="prediction"
+            >
+                -
+            </div>
+
+
+            <div
+                id="confidence"
+                class="confidence"
+            >
+                Waiting for image...
+            </div>
+
+
+            <div class="processed-title">
+                Image actually sent to the CNN
+            </div>
+
+
+            <img
+                id="processedImage"
+                alt="Processed character"
+            >
+
+        </div>
+
+
+        <div class="instructions">
+
+            Write <strong>ONE</strong> large handwritten
+            capital letter or digit.
+
+            <br>
+
+            Place it completely inside the green box.
+
+            <br>
+
+            Keep the paper reasonably flat and well lit.
+
+        </div>
 
     </div>
 
 
-    <button id="startCamera">
-        Start Camera
-    </button>
-
-
-    <button id="capture">
-        Capture & Process
-    </button>
-
-
-    <canvas id="canvas"></canvas>
-
-
-    <p id="result">
-        Camera not started.
-    </p>
-
-
     <script>
 
-
         const video =
-            document.getElementById("camera");
-
-
-        const startButton =
-            document.getElementById("startCamera");
-
-
-        const captureButton =
-            document.getElementById("capture");
-
+            document.getElementById("video");
 
         const canvas =
             document.getElementById("canvas");
 
+        const startCameraButton =
+            document.getElementById("startCamera");
 
-        const result =
-            document.getElementById("result");
+        const captureButton =
+            document.getElementById("captureButton");
+
+        const status =
+            document.getElementById("status");
+
+        const prediction =
+            document.getElementById("prediction");
+
+        const confidence =
+            document.getElementById("confidence");
+
+        const processedImage =
+            document.getElementById("processedImage");
 
 
-        // =================================
+        let cameraStream = null;
+
+
+        // =====================================================
         // START CAMERA
-        // =================================
+        // =====================================================
 
-        startButton.addEventListener(
+        startCameraButton.addEventListener(
             "click",
             async () => {
 
                 try {
 
-                    const stream =
-                        await navigator.mediaDevices
-                        .getUserMedia({
-                            video: true
-                        });
+                    cameraStream =
+                        await navigator.mediaDevices.getUserMedia(
+                            {
+                                video: true,
+                                audio: false
+                            }
+                        );
 
 
                     video.srcObject =
-                        stream;
+                        cameraStream;
 
 
-                    result.textContent =
-                        "Camera started successfully.";
+                    status.textContent =
+                        "Camera started. Place ONE character inside the green box.";
+
+                    status.className =
+                        "status";
 
                 }
 
                 catch (error) {
 
-                    console.error(
-                        "Camera error:",
-                        error
-                    );
+                    console.error(error);
 
-
-                    result.textContent =
+                    status.textContent =
                         "Could not access camera.";
+
+                    status.className =
+                        "status error";
 
                 }
 
@@ -240,70 +423,121 @@
         );
 
 
-        // =================================
-        // CAPTURE + SEND IMAGE
-        // =================================
+        // =====================================================
+        // CAPTURE
+        // =====================================================
 
         captureButton.addEventListener(
             "click",
             async () => {
 
-                if (!video.srcObject) {
+                if (!cameraStream) {
 
-                    result.textContent =
-                        "Start the camera first.";
+                    status.textContent =
+                        "Please start the camera first.";
+
+                    status.className =
+                        "status error";
 
                     return;
-
                 }
 
 
-                // Set canvas size
+                if (
+                    video.videoWidth === 0 ||
+                    video.videoHeight === 0
+                ) {
 
-                canvas.width =
+                    status.textContent =
+                        "Camera is not ready yet.";
+
+                    return;
+                }
+
+
+                // -------------------------------------------------
+                // Camera resolution
+                // -------------------------------------------------
+
+                const videoWidth =
                     video.videoWidth;
 
-                canvas.height =
+                const videoHeight =
                     video.videoHeight;
 
 
-                // Get drawing context
+                // -------------------------------------------------
+                // Green box size
+                // -------------------------------------------------
+
+                const boxSize =
+                    Math.min(
+                        300,
+                        videoWidth,
+                        videoHeight
+                    );
+
+
+                // -------------------------------------------------
+                // Center crop
+                // -------------------------------------------------
+
+                const sourceX =
+                    (videoWidth - boxSize) / 2;
+
+                const sourceY =
+                    (videoHeight - boxSize) / 2;
+
+
+                // -------------------------------------------------
+                // Canvas
+                // -------------------------------------------------
+
+                canvas.width =
+                    boxSize;
+
+                canvas.height =
+                    boxSize;
+
 
                 const context =
                     canvas.getContext("2d");
 
 
-                // Copy camera frame
+                // -------------------------------------------------
+                // Copy only green-box region
+                // -------------------------------------------------
 
                 context.drawImage(
                     video,
+
+                    sourceX,
+                    sourceY,
+                    boxSize,
+                    boxSize,
+
                     0,
                     0,
-                    canvas.width,
-                    canvas.height
+                    boxSize,
+                    boxSize
                 );
 
 
-                result.textContent =
-                    "Processing image...";
-
-
-                // Convert canvas to image
+                // -------------------------------------------------
+                // Convert to JPEG
+                // -------------------------------------------------
 
                 canvas.toBlob(
                     async (blob) => {
 
                         if (!blob) {
 
-                            result.textContent =
-                                "Could not create image.";
+                            status.textContent =
+                                "Could not capture image.";
 
                             return;
-
                         }
 
-
-                        // Create form data
 
                         const formData =
                             new FormData();
@@ -312,13 +546,27 @@
                         formData.append(
                             "file",
                             blob,
-                            "camera-frame.jpg"
+                            "character.jpg"
                         );
+
+
+                        status.textContent =
+                            "Sending character to AI...";
+
+
+                        prediction.textContent =
+                            "...";
+
+
+                        confidence.textContent =
+                            "Processing...";
 
 
                         try {
 
+                            // -------------------------------------------------
                             // Send to FastAPI
+                            // -------------------------------------------------
 
                             const response =
                                 await fetch(
@@ -335,37 +583,96 @@
 
 
                             console.log(
-                                "Backend response:",
+                                "AI response:",
                                 data
                             );
 
 
-                            if (data.success) {
+                            // -------------------------------------------------
+                            // Error
+                            // -------------------------------------------------
 
-                                result.textContent =
-                                    `Image received by Python: ${data.width} × ${data.height}`;
+                            if (!response.ok) {
+
+                                throw new Error(
+                                    data.detail ||
+                                    "Server error"
+                                );
 
                             }
 
-                            else {
 
-                                result.textContent =
-                                    data.message;
+                            if (!data.success) {
 
+                                prediction.textContent =
+                                    "?";
+
+
+                                confidence.textContent =
+                                    data.error ||
+                                    "Character not detected.";
+
+
+                                confidence.className =
+                                    "confidence error";
+
+
+                                status.textContent =
+                                    "Could not recognize the character.";
+
+
+                                return;
                             }
+
+
+                            // -------------------------------------------------
+                            // Prediction
+                            // -------------------------------------------------
+
+                            prediction.textContent =
+                                data.character;
+
+
+                            confidence.textContent =
+                                `Confidence: ${data.confidence_percent}%`;
+
+
+                            confidence.className =
+                                "confidence";
+
+
+                            // -------------------------------------------------
+                            // SHOW THE EXACT IMAGE SENT TO CNN
+                            // -------------------------------------------------
+
+                            processedImage.src =
+                                data.processed_image;
+
+
+                            status.textContent =
+                                "Character processed successfully.";
 
                         }
 
                         catch (error) {
 
-                            console.error(
-                                "Upload error:",
-                                error
-                            );
+                            console.error(error);
 
 
-                            result.textContent =
-                                "Could not connect to Python backend.";
+                            prediction.textContent =
+                                "?";
+
+
+                            confidence.textContent =
+                                "Prediction failed.";
+
+
+                            confidence.className =
+                                "confidence error";
+
+
+                            status.textContent =
+                                error.message;
 
                         }
 
@@ -373,16 +680,13 @@
 
                     "image/jpeg",
 
-                    0.9
-
+                    0.90
                 );
 
             }
         );
 
-
     </script>
-
 
 </body>
 

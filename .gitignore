@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+.env
+
+# Downloaded datasets
+data/dataset/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
